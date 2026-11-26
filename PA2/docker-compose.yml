@@ -1,4 +1,11 @@
-# Stack: Docker Compose / PostgreSQL 17; AI contribution: 82%; human contribution: 18%.
+# Tool: Claude Code (Claude Opus 5.5)
+# Language stack: Python / FastAPI / PostgreSQL 17 / uv
+# Prompt Summary: "Harden the PA2 indexer: local RS256 JWT auth, row-level authz, AES-GCM manuscript encryption, input validation, PT1-PT3 mitigations"
+# AI Contribution: Added read-only JWKS mount and JWT / encryption / limit settings to the OpenAI Codex original (~25%)
+# Human Modifications: None yet
+# Verification: docker compose up --build; full pytest suite run against the stack with PA2_BASE_URL
+# Confidence: High
+# Values come from the shell environment or an env file: docker compose --env-file functional-codebase/.env up --build
 name: cs763-pa2
 services:
   api:
@@ -8,10 +15,23 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://indexer:local-course-only@db:5432/pa2
       STORAGE_DIR: /data/manuscripts
+      # Token verification is local: public keys come only from the mounted JWKS file.
+      JWT_JWKS_PATH: ${JWT_JWKS_PATH:-/etc/indexer/jwks.json}
+      JWT_ISSUER: ${JWT_ISSUER:-http://localhost:9000}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-cs763-api}
+      # Required, never committed: base64 of 32 random bytes, from the environment or the env file.
+      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:?set FIELD_ENCRYPTION_KEY (see functional-codebase/.env.example)}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-10485760}
+      MAX_JSON_BYTES: ${MAX_JSON_BYTES:-1048576}
+      MAX_ZIP_FILES: ${MAX_ZIP_FILES:-50}
+      MAX_ZIP_BYTES: ${MAX_ZIP_BYTES:-104857600}
+      MAX_CONCURRENT_ZIPS: ${MAX_CONCURRENT_ZIPS:-2}
     depends_on:
       db:
         condition: service_healthy
-    volumes: ["manuscripts:/data/manuscripts"]
+    volumes:
+      - "manuscripts:/data/manuscripts"
+      - "${JWKS_HOST_PATH:?set JWKS_HOST_PATH to the public JWKS file on the host}:${JWT_JWKS_PATH:-/etc/indexer/jwks.json}:ro"
     networks: [ingress, backend]
     healthcheck:
       test:

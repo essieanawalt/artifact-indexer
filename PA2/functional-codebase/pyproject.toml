@@ -1,9 +1,23 @@
-# AI contribution: 100%; human review pending.
+# Tool: Claude Code (Claude Opus 5.5)
+# Language stack: Python / FastAPI / PostgreSQL 17 / uv
+# Prompt Summary: "Harden the PA2 indexer: local RS256 JWT auth, row-level authz, AES-GCM manuscript encryption, input validation, PT1-PT3 mitigations"
+# AI Contribution: Added pyjwt[crypto] and cryptography dependencies to the OpenAI Codex original (~10%)
+# Human Modifications: None yet
+# Verification: uv lock / uv export; Docker build with --require-hashes; full pytest suite
+# Confidence: High
 [project]
 name = "cs763-pa2-baseline"
 version = "0.2.0"
 requires-python = ">=3.13,<3.14"
-dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1", "sqlalchemy>=2.0,<3", "psycopg[binary]>=3.2,<4", "python-multipart>=0.0.20,<1"]
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.34,<1",
+    "sqlalchemy>=2.0,<3",
+    "psycopg[binary]>=3.2,<4",
+    "python-multipart>=0.0.20,<1",
+    "pyjwt[crypto]>=2.10,<3",
+    "cryptography>=44,<50",
+]
 [dependency-groups]
 dev = ["pytest>=8,<10", "httpx>=0.28,<1"]
 [tool.uv]
